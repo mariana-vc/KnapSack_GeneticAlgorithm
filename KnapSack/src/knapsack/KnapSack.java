@@ -41,7 +41,7 @@ public class KnapSack {
         int run = 0;
         this.printPopulationAndStats(run);
         while (run < 200) {
-            this.createNextPopulation();
+            this.createNextPopulationOne();
             this.printPopulationAndStats(run);
             run++;
         }
@@ -93,7 +93,7 @@ public class KnapSack {
      * method 1. Picks parents giving the higher ranked individuals a greater
      * chance than the lower ranked ones.
      */
-    public void createNextPopulation() {
+    public void createNextPopulationOne() {
         int[][] nextGeneration = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
         int[] ranks = this.getRankings();
         for (int i = 0; i < this.POPULATION_SIZE; i++) {
@@ -115,6 +115,35 @@ public class KnapSack {
     }
 
     /**
+     * Create next generation using selection, mutation, and cross over by
+     * method 2. Picks parents based on eliteism and getting rid of the bottom individuals
+     */
+    public void createNextPopulationTwo() {
+        int[][] nextGeneration = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
+        int eliteSize = (int) (this.POPULATION_SIZE*.1);
+        boolean[] elites = this.identifyElites();
+        boolean[] weak = this.identifyElites();
+        for (int i = 0; i < eliteSize; i++) {
+            
+        }
+        for (int i = eliteSize; i < this.POPULATION_SIZE; i++) {
+            //pick 2 parents, note they *could* be the same one
+            int p1 = this.getParentTwo(weak);
+            int p2 = this.getParentTwo(weak);
+
+            // cross to create new child
+            int[] child = this.crossParentsTwo(p1, p2);
+            //possibly mutate child
+            int[] finalChild = this.tryMutationTwo(child);
+            //add child to new population
+            for (int j = 0; j < this.NUM_OF_ITEMS; j++) {
+                nextGeneration[i][j] = finalChild[j];
+            }
+        }
+        this.population = nextGeneration;
+    }
+    
+    /**
      * Will randomly decide if this individual will mutate and will then switch
      * a random index location to its opposite state.
      *
@@ -132,6 +161,24 @@ public class KnapSack {
             } else {
                 mutatedChild[randIndex] = 1;
             }
+        }
+        return mutatedChild;
+    }
+    
+    public int[] tryMutationTwo(int[] child) {
+        double mutate = Math.random();
+        int[] mutatedChild = child;
+        if (mutate <= this.MUTATION_RATE) {
+            Random rand = new Random();
+            int randIndex;
+            int randIndex2;
+            do{
+            randIndex = rand.nextInt(this.NUM_OF_ITEMS);
+            randIndex2 = rand.nextInt(this.NUM_OF_ITEMS);
+            } while (randIndex == randIndex2);
+            int temp = child[randIndex];
+            mutatedChild[randIndex2] = child[randIndex];
+            mutatedChild[randIndex] = temp;
         }
         return mutatedChild;
     }
@@ -159,6 +206,25 @@ public class KnapSack {
         return child;
     }
 
+    /**
+     * Cross parents method 2, will swap every other data point in the index instead of
+     * one full sweeping area for each parent.
+     * @param p1 parent 1
+     * @param p2 parent 2
+     * @return child of these 2 parents
+     */
+    public int[] crossParentsTwo(int p1, int p2){
+        int[] child = new int[this.NUM_OF_ITEMS];
+        for (int i = 0; i < this.NUM_OF_ITEMS; i++) {
+            if((i%2) == 0){
+                child[i] = this.population[p1][i];
+            } else {
+                child[i] = this.population[p2][i];
+            }
+        }
+        return child;
+    }
+    
     /**
      * Picks a parent based on giving the parents with higher fitness a greater
      * chance to be picked depending on their rank.
@@ -206,6 +272,64 @@ public class KnapSack {
         return 0;
     }
 
+    /**
+     * Picks a parent based on giving the parents with higher fitness a greater
+     * chance to be picked depending on their rank.
+     *
+     * @param ranks int[] containing the population's ranks
+     * @return int index of chosen parent
+     */
+    public int getParentTwo(boolean[] dontUse) {
+        int percent = (int) (this.POPULATION_SIZE*.1);
+        double random = Math.random();
+        
+        return 0;
+    }
+    
+    /**
+     * Method will identify the weakest individuals and mark them so they will not be used in next generation.
+     * @return boolean array identifying weakest individuals
+     */
+    public boolean[] cullTheWeak() {
+        int weakSize = (int) (this.POPULATION_SIZE*.1);
+        boolean[] theWeak = new boolean[this.POPULATION_SIZE];
+        for (int z = 0; z < weakSize; z++) {
+            double lowestFitness = 99;
+            int lowestIndex = 0;
+            for (int i = 0; i < this.POPULATION_SIZE; i++) {
+                if (this.getIndividualValue(i) <= lowestFitness
+                        && !theWeak[i]) {
+                    lowestFitness = this.getIndividualValue(i);
+                    lowestIndex = i;
+                }
+            }
+            theWeak[lowestIndex] = true;
+        }
+        return theWeak;
+    }
+
+    /**
+     * Method identifies the elite among this population so they can be cloned into next generation
+     * @return boolean array identifying the elite individuals
+     */
+    public boolean[] identifyElites() {
+        int eliteSize = (int) (this.POPULATION_SIZE*.1);
+        boolean[] elites = new boolean[this.POPULATION_SIZE];
+        for (int z = 0; z < eliteSize; z++) {
+            double highestFitness = 0.0;
+            int eliteIndex = 0;
+            for (int i = 0; i < this.POPULATION_SIZE; i++) {
+                if (this.getIndividualValue(i) >= highestFitness
+                        && !elites[i]) {
+                    highestFitness = this.getIndividualValue(i);
+                    eliteIndex = i;
+                }
+            }
+            elites[eliteIndex] = true;
+        }
+        return elites;
+    }
+    
     /**
      * Finds best individual of this population's value.
      * @return best invidiual
