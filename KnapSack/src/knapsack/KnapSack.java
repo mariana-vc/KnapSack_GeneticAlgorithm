@@ -14,11 +14,11 @@ import java.util.Random;
 
 public class KnapSack {
 
-    private final int KNAPSACK_CAPACITY = 100;  //capacity of knapsack
+    private final int KNAPSACK_CAPACITY = 50;  //capacity of knapsack
     private final int NUM_OF_ITEMS = 10;        //number of different items to consider
     private final int MAX_GENERATIONS = 200;    //max generations before halting
     private final int POPULATION_SIZE = 10;   //size of each population after generation
-    private final int MAX_WEIGHT = 20;          //maximum weight allowed for an item, used for random item generation
+    private final int MAX_WEIGHT = 50;          //maximum weight allowed for an item, used for random item generation
     private final int MAX_VALUE = 10;          //maximum value allowed for an item ^^^
     private final double MUTATION_RATE = .1;
     private int[][] population;
@@ -29,6 +29,9 @@ public class KnapSack {
         items = new Item[this.NUM_OF_ITEMS];
     }
 
+    /**
+     * Run using selection, mutation, and cross over method 1.
+     */
     private void run() {
         this.randomizeItems(this.MAX_WEIGHT, this.MAX_VALUE);
         this.createInitialPopulation();
@@ -38,6 +41,10 @@ public class KnapSack {
             this.createNextPopulation();
             this.printPopulationAndStats(run);
             run++;
+        }
+        int[] test = this.solutionToThisKnapsack();
+        for (int i = 0; i < test.length; i++) {
+            System.out.print(test[i]);
         }
         //this.print2dArray(population);
         //this.printItemArray(items);
@@ -72,6 +79,11 @@ public class KnapSack {
         }
     }
 
+    /**
+     * Create next generation using selection, mutation, and cross over by
+     * method 1. Picks parents giving the higher ranked individuals a greater
+     * chance than the lower ranked ones.
+     */
     public void createNextPopulation() {
         int[][] nextGeneration = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
         int[] ranks = this.getRankings();
@@ -79,9 +91,9 @@ public class KnapSack {
             //pick 2 parents, note they *could* be the same one
             int p1 = this.getParent(ranks);
             int p2 = this.getParent(ranks);
-            
+
             // cross to create new child
-            int[] child = this.crossParents(p1,p2);
+            int[] child = this.crossParents(p1, p2);
             //possibly mutate child
             int[] finalChild = this.tryMutation(child);
             //add child to new population
@@ -93,13 +105,20 @@ public class KnapSack {
         this.population = nextGeneration;
     }
 
-    public int[] tryMutation(int[] child){
+    /**
+     * Will randomly decide if this individual will mutate and will then switch
+     * a random index location to its opposite state.
+     *
+     * @param child the child to mutate
+     * @return the child wether or not it has been mutated
+     */
+    public int[] tryMutation(int[] child) {
         double mutate = Math.random();
         int[] mutatedChild = child;
-        if(mutate <= this.MUTATION_RATE){
+        if (mutate <= this.MUTATION_RATE) {
             Random rand = new Random();
             int randIndex = rand.nextInt(this.NUM_OF_ITEMS);
-            if(mutatedChild[randIndex] == 1){
+            if (mutatedChild[randIndex] == 1) {
                 mutatedChild[randIndex] = 0;
             } else {
                 mutatedChild[randIndex] = 1;
@@ -107,29 +126,30 @@ public class KnapSack {
         }
         return mutatedChild;
     }
-    
+
     /**
      * Cross these 2 parents information from a random index and on.
+     *
      * @param p1 first parent index
      * @param p2 second parent index
      * @return int[] the new child
      */
-    public int[] crossParents(int p1, int p2){
+    public int[] crossParents(int p1, int p2) {
         int[] child = new int[this.NUM_OF_ITEMS];
         int randomIndex = 0;
-        do{
-        Random rand = new Random();
-        randomIndex = rand.nextInt(this.NUM_OF_ITEMS+1);
+        do {
+            Random rand = new Random();
+            randomIndex = rand.nextInt(this.NUM_OF_ITEMS + 1);
         } while (randomIndex == this.NUM_OF_ITEMS || randomIndex == this.NUM_OF_ITEMS - 1);
         for (int i = 0; i < randomIndex; i++) {
             child[i] = this.population[p1][i];
         }
-        for (int i = randomIndex+1; i < 10; i++) {
+        for (int i = randomIndex + 1; i < 10; i++) {
             child[i] = this.population[p2][i];
         }
         return child;
     }
-    
+
     /**
      * Picks a parent based on giving the parents with higher fitness a greater
      * chance to be picked depending on their rank.
@@ -154,11 +174,11 @@ public class KnapSack {
         //randomize this is to begin looking for an individual based on a random
         //index, therefore everyone has an equal shot
         boolean done = false;
-        while(!done){
+        while (!done) {
             Random rand = new Random();
             int randomIndex = rand.nextInt(this.POPULATION_SIZE);
             for (int i = randomIndex; i < this.POPULATION_SIZE; i++) {
-                if(ranks[i] == chosenRank){
+                if (ranks[i] == chosenRank) {
                     return i;
                 }
             }
@@ -166,15 +186,51 @@ public class KnapSack {
             //if none exist then we just return a random index as a parent
             boolean exists = false;
             for (int i = 0; i < this.POPULATION_SIZE; i++) {
-                if(ranks[i] == chosenRank){
+                if (ranks[i] == chosenRank) {
                     exists = true;
                 }
             }
-            if(!exists){
+            if (!exists) {
                 return rand.nextInt(this.POPULATION_SIZE);
             }
         }
         return 0;
+    }
+
+    public int[] solutionToThisKnapsack() {
+        int numIterations = (int) (Math.pow(2, (double) this.NUM_OF_ITEMS));
+        int[] best = new int[this.NUM_OF_ITEMS];
+        int[] bestSack = new int[this.NUM_OF_ITEMS];
+        int bestValue = 0;
+        int bestWeight = 0;
+        //cycle through all possible combinations of items
+        for (int i = 1; i < numIterations; i++) {
+            int j = this.NUM_OF_ITEMS - 1;
+            while (best[j] != 0 && j > 0) {
+                best[j] = 0;
+                j = j - 1;
+            }
+            best[j] = 1;
+            int tempWeight = 0;
+            int tempValue = 0;
+            for (int k = 0; k < this.NUM_OF_ITEMS; k++) {
+                if (best[k] == 1) {
+                    tempWeight = tempWeight + this.items[k].weight;
+                    tempValue = tempValue + this.items[k].value;
+                }
+            }
+            if (tempValue > bestValue && tempWeight <= this.KNAPSACK_CAPACITY) {
+                System.out.println("bestvalue "+tempValue +":"+bestValue);
+                System.out.println("bestweight"+tempWeight);
+                bestValue = tempValue;
+                bestWeight = tempWeight;
+                for (int k = 0; k < this.NUM_OF_ITEMS; k++) {
+                    bestSack[k] = best[k];
+                }
+            }
+        }
+        //return best
+        return bestSack;
     }
 
     /**
