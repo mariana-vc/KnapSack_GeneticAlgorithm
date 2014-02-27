@@ -18,41 +18,55 @@ public class KnapSack {
     private final int NUM_OF_ITEMS = 15;        //number of different items to consider
     private final int MAX_GENERATIONS = 100;    //max generations before halting
     private final int POPULATION_SIZE = 10;   //size of each population after generation
-    private final int MAX_WEIGHT = 50;          //maximum weight allowed for an item, used for random item generation
+    private final int MAX_WEIGHT = 20;          //maximum weight allowed for an item, used for random item generation
     private final int MAX_VALUE = 10;          //maximum value allowed for an item ^^^
     private final double MUTATION_RATE = .01;
     private int[][] population;
     private Item[] items;
-    private int METHOD = 1;  //Change this int value to 2 to go into method 2 for selection mutation and crossover
+    private int METHOD = 2;  //Change this int value to 2 to go into method 2 for selection mutation and crossover
 
     public KnapSack() {
         population = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
         items = new Item[this.NUM_OF_ITEMS];
-        
+
     }
 
     /**
      * Run using selection, mutation, and cross over method 1.
      */
     private void run() {
-        if(this.METHOD ==1){
-        this.randomizeItems(this.MAX_WEIGHT, this.MAX_VALUE);
-        this.createInitialPopulation();
-        int run = 0;
-        this.printPopulationAndStats(run);
-        while (run < 200) {
-            this.createNextPopulationOne();
+        if (this.METHOD == 1) {
+            this.randomizeItems(this.MAX_WEIGHT, this.MAX_VALUE);
+            this.createInitialPopulation();
+            int run = 0;
             this.printPopulationAndStats(run);
-            run++;
-        }
-        int[] test = this.solutionToThisKnapsack();
-        System.out.print("Solution to this Knapsack: ");
-        for (int i = 0; i < test.length; i++) {
-            System.out.print(test[i]);
-        }
-        System.out.println("     Best value: "+this.getPassedInValue(test));
+            while (run < 200) {
+                this.createNextPopulationOne();
+                this.printPopulationAndStats(run);
+                run++;
+            }
+            int[] test = this.solutionToThisKnapsack();
+            System.out.print("Solution to this Knapsack: ");
+            for (int i = 0; i < test.length; i++) {
+                System.out.print(test[i]);
+            }
+            System.out.println("     Best value: " + this.getPassedInValue(test));
         } else {
-            
+            this.randomizeItems(this.MAX_WEIGHT, this.MAX_VALUE);
+            this.createInitialPopulation();
+            int run = 0;
+            this.printPopulationAndStats(run);
+            while (run < 200) {
+                this.createNextPopulationTwo();
+                this.printPopulationAndStats(run + 1);
+                run++;
+            }
+            int[] test = this.solutionToThisKnapsack();
+            System.out.print("Solution to this Knapsack: ");
+            for (int i = 0; i < test.length; i++) {
+                System.out.print(test[i]);
+            }
+            System.out.println("     Best value: " + this.getPassedInValue(test));
         }
         //this.print2dArray(population);
         //this.printItemArray(items);
@@ -66,12 +80,21 @@ public class KnapSack {
      * @param gen generation number
      */
     public void printPopulationAndStats(int gen) {
-        System.out.println("Population for Generation " + gen + ": \n");
-        this.print2dArray(population);
-        System.out.println("Average Population Value: " + this.getPopAverageValue());
-        int[] best = this.getBestSolutionFromPopulation();
-            System.out.println("Highest Value Achieved: " +this.getPassedInValue(best));
-        System.out.println("---------------------------------------------------------");
+        if (gen == 0) {
+            System.out.println("Initial Population\n");
+            this.print2dArray(population);
+            System.out.println("Average Population Value: " + this.getPopAverageValue());
+            int[] best = this.getBestSolutionFromPopulation();
+            System.out.println("Highest Value Achieved: " + this.getPassedInValue(best));
+            System.out.println("---------------------------------------------------------");
+        } else {
+            System.out.println("Population for Generation " + gen + ": \n");
+            this.print2dArray(population);
+            System.out.println("Average Population Value: " + this.getPopAverageValue());
+            int[] best = this.getBestSolutionFromPopulation();
+            System.out.println("Highest Value Achieved: " + this.getPassedInValue(best));
+            System.out.println("---------------------------------------------------------");
+        }
     }
 
     /**
@@ -116,15 +139,25 @@ public class KnapSack {
 
     /**
      * Create next generation using selection, mutation, and cross over by
-     * method 2. Picks parents based on eliteism and getting rid of the bottom individuals
+     * method 2. Picks parents based on eliteism and getting rid of the bottom
+     * individuals
      */
     public void createNextPopulationTwo() {
         int[][] nextGeneration = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
-        int eliteSize = (int) (this.POPULATION_SIZE*.1);
+        int eliteSize = (int) (this.POPULATION_SIZE * .1);
         boolean[] elites = this.identifyElites();
         boolean[] weak = this.identifyElites();
+        //clone the elites
         for (int i = 0; i < eliteSize; i++) {
-            
+            for (int j = 0; j < this.POPULATION_SIZE; j++) {
+                if (elites[j]) {
+                    elites[j] = false;
+                    System.out.println("elite being added "+i);
+                    for (int k = 0; k < this.NUM_OF_ITEMS; k++) {
+                        nextGeneration[i][k] = this.population[i][k];
+                    }
+                }
+            }
         }
         for (int i = eliteSize; i < this.POPULATION_SIZE; i++) {
             //pick 2 parents, note they *could* be the same one
@@ -142,7 +175,7 @@ public class KnapSack {
         }
         this.population = nextGeneration;
     }
-    
+
     /**
      * Will randomly decide if this individual will mutate and will then switch
      * a random index location to its opposite state.
@@ -164,7 +197,7 @@ public class KnapSack {
         }
         return mutatedChild;
     }
-    
+
     public int[] tryMutationTwo(int[] child) {
         double mutate = Math.random();
         int[] mutatedChild = child;
@@ -172,9 +205,9 @@ public class KnapSack {
             Random rand = new Random();
             int randIndex;
             int randIndex2;
-            do{
-            randIndex = rand.nextInt(this.NUM_OF_ITEMS);
-            randIndex2 = rand.nextInt(this.NUM_OF_ITEMS);
+            do {
+                randIndex = rand.nextInt(this.NUM_OF_ITEMS);
+                randIndex2 = rand.nextInt(this.NUM_OF_ITEMS);
             } while (randIndex == randIndex2);
             int temp = child[randIndex];
             mutatedChild[randIndex2] = child[randIndex];
@@ -207,16 +240,17 @@ public class KnapSack {
     }
 
     /**
-     * Cross parents method 2, will swap every other data point in the index instead of
-     * one full sweeping area for each parent.
+     * Cross parents method 2, will swap every other data point in the index
+     * instead of one full sweeping area for each parent.
+     *
      * @param p1 parent 1
      * @param p2 parent 2
      * @return child of these 2 parents
      */
-    public int[] crossParentsTwo(int p1, int p2){
+    public int[] crossParentsTwo(int p1, int p2) {
         int[] child = new int[this.NUM_OF_ITEMS];
         for (int i = 0; i < this.NUM_OF_ITEMS; i++) {
-            if((i%2) == 0){
+            if ((i % 2) == 0) {
                 child[i] = this.population[p1][i];
             } else {
                 child[i] = this.population[p2][i];
@@ -224,7 +258,7 @@ public class KnapSack {
         }
         return child;
     }
-    
+
     /**
      * Picks a parent based on giving the parents with higher fitness a greater
      * chance to be picked depending on their rank.
@@ -280,18 +314,30 @@ public class KnapSack {
      * @return int index of chosen parent
      */
     public int getParentTwo(boolean[] dontUse) {
-        int percent = (int) (this.POPULATION_SIZE*.1);
-        double random = Math.random();
-        
+        int percent = (int) (this.POPULATION_SIZE * .1);
+        Random random = new Random();
+        boolean foundSuitableParent = false;
+        int counter = 0;
+        do {
+            int parentIndex = random.nextInt(this.POPULATION_SIZE);
+            if (this.getIndividualValue(parentIndex) > this.getPopAverageValue()) {
+                return parentIndex;
+            }
+            if (counter > this.POPULATION_SIZE - percent) {
+                return parentIndex;
+            }
+        } while (!foundSuitableParent);
         return 0;
     }
-    
+
     /**
-     * Method will identify the weakest individuals and mark them so they will not be used in next generation.
+     * Method will identify the weakest individuals and mark them so they will
+     * not be used in next generation.
+     *
      * @return boolean array identifying weakest individuals
      */
     public boolean[] cullTheWeak() {
-        int weakSize = (int) (this.POPULATION_SIZE*.1);
+        int weakSize = (int) (this.POPULATION_SIZE * .1);
         boolean[] theWeak = new boolean[this.POPULATION_SIZE];
         for (int z = 0; z < weakSize; z++) {
             double lowestFitness = 99;
@@ -309,11 +355,13 @@ public class KnapSack {
     }
 
     /**
-     * Method identifies the elite among this population so they can be cloned into next generation
+     * Method identifies the elite among this population so they can be cloned
+     * into next generation
+     *
      * @return boolean array identifying the elite individuals
      */
     public boolean[] identifyElites() {
-        int eliteSize = (int) (this.POPULATION_SIZE*.1);
+        int eliteSize = (int) (this.POPULATION_SIZE * .1);
         boolean[] elites = new boolean[this.POPULATION_SIZE];
         for (int z = 0; z < eliteSize; z++) {
             double highestFitness = 0.0;
@@ -329,25 +377,28 @@ public class KnapSack {
         }
         return elites;
     }
-    
+
     /**
      * Finds best individual of this population's value.
+     *
      * @return best invidiual
      */
-    public int[] getBestSolutionFromPopulation(){
+    public int[] getBestSolutionFromPopulation() {
         double bestValue = 0;
         int index = 0;
         for (int i = 0; i < this.POPULATION_SIZE; i++) {
-            if(this.getIndividualValue(i) > bestValue && this.getIndividualWeight(i) < this.KNAPSACK_CAPACITY){
+            if (this.getIndividualValue(i) > bestValue && this.getIndividualWeight(i) < this.KNAPSACK_CAPACITY) {
                 bestValue = this.getIndividualValue(i);
                 index = i;
             }
         }
         return this.population[index];
     }
-    
+
     /**
-     * This method runs a brutforce algorithm to figure out the best solution to this knapsack and items
+     * This method runs a brutforce algorithm to figure out the best solution to
+     * this knapsack and items
+     *
      * @return array containing solution
      */
     public int[] solutionToThisKnapsack() {
@@ -531,10 +582,11 @@ public class KnapSack {
 
     /**
      * Gets the value of this passed in array
+     *
      * @param solution passed in array
      * @return double value
      */
-    public double getPassedInValue(int[] solution){
+    public double getPassedInValue(int[] solution) {
         double value = 0;
         for (int j = 0; j < this.NUM_OF_ITEMS; j++) {
             if (solution[j] == 1) {
@@ -543,7 +595,7 @@ public class KnapSack {
         }
         return value;
     }
-    
+
     /**
      * just for showing me whats inside
      */
