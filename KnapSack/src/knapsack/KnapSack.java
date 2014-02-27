@@ -20,11 +20,19 @@ public class KnapSack {
     private final int POPULATION_SIZE = 10;   //size of each population after generation
     private final int MAX_WEIGHT = 20;          //maximum weight allowed for an item, used for random item generation
     private final int MAX_VALUE = 10;          //maximum value allowed for an item ^^^
-    private final double MUTATION_RATE = .01;
-    private int[][] population;
-    private Item[] items;
-    private int METHOD = 2;  //Change this int value to 2 to go into method 2 for selection mutation and crossover
-
+    private final double MUTATION_RATE = .01;  //mutation rate
+    private int[][] population;             //the population
+    private Item[] items;                   //array of Item class, used to encapsualte an item and its value and weight
+    private int METHOD = 2;  /*Change this int value to 1 in order to use method 1 or 2 to go into method 2 for selection mutation and crossover
+                            //Method 1 : Selection is done based on rankings 1-4 based on value and weight fitness
+                                         Mutation is done by switching the value of a random index from in the sack to out of the sack or vice versa
+                                         Crossover is done by picking a random index and copying one parent up to that point and the other for the rest into a new child
+    
+                              Method 2 : Selection is done by elitism, where the top 10 percent are cloned and the bottom 10 percent are removed, rest are random
+                                         Mutation is done by switching the "in or out" value for 2 items in an individuals knapsack
+                                         Crossover is done by alternating one item from one parent and another from the other parent for a child
+                                
+                             */
     public KnapSack() {
         population = new int[this.POPULATION_SIZE][this.NUM_OF_ITEMS];
         items = new Item[this.NUM_OF_ITEMS];
